@@ -110,10 +110,10 @@ These are the relationships the desk is built on. Attractive expectancy is a **p
 
 ### Arithmetic step
 
-With bounds \([P_L, P_U]\) and \(n =\) `GRID_LEVELS`:
+With bounds \([P_{L}, P_{U}]\) and \(n =\) `GRID_LEVELS`:
 
 $$
-P_i = P_L + i \cdot \frac{P_U - P_L}{n-1},\quad i = 0,\ldots,n-1
+P_{i} = P_{L} + i \cdot \frac{P_{U} - P_{L}}{n-1},\quad i = 0,\ldots,n-1
 $$
 
 Equal **dollars** between rungs. Fine for a narrow fiat-like range; on BTC it packs more % into the cheap rungs and less % into the expensive ones.
@@ -121,21 +121,21 @@ Equal **dollars** between rungs. Fine for a narrow fiat-like range; on BTC it pa
 ### Geometric ladder (as coded)
 
 $$
-P_i = P_L \left(\frac{P_U}{P_L}\right)^{i/(n-1)},\quad i = 0,\ldots,n-1
+P_{i} = P_{L} \left(\frac{P_{U}}{P_{L}}\right)^{i/(n-1)},\quad i = 0,\ldots,n-1
 $$
 
 The exponent uses **\(n-1\)**, matching `buildGridLevels` / `buildGridLevelsWithPrice` — not \(n\). Adjacent spacing is constant in percent:
 
 $$
-\text{gross step} = \frac{P_{i+1}}{P_i} - 1 = \left(\frac{P_U}{P_L}\right)^{1/(n-1)} - 1
+\text{gross step} = \frac{P_{i+1}}{P_{i}} - 1 = \left(\frac{P_{U}}{P_{L}}\right)^{1/(n-1)} - 1
 $$
 
-On the shipped \(58{,}500\)–\(70{,}800\) / **8**-level book, geometric mid \(\sqrt{P_L P_U} \approx 64{,}357\) (inside a ~\$64.3k print) and adjacent spacing is about **2.76%**.
+On the shipped \(58{,}500\)–\(70{,}800\) / **8**-level book, geometric mid \(\sqrt{P_{L} P_{U}} \approx 64{,}357\) (inside a ~\$64.3k print) and adjacent spacing is about **2.76%**.
 
 ### Deploy split (long, as shipped)
 
 $$
-\text{open\_long} \iff P_i < P_{\text{last}},\qquad \text{close\_long} \iff P_i > P_{\text{last}}
+\text{open-long} \iff P_{i} < P_{\mathrm{last}},\qquad \text{close-long} \iff P_{i} > P_{\mathrm{last}}
 $$
 
 No clip is placed *at* last. Opens only if `RiskManager.canPlaceOrder` clears margin and size.
@@ -145,7 +145,7 @@ No clip is placed *at* last. Opens only if `RiskManager.canPlaceOrder` clears ma
 `estimateGridProfitPerCycle` is **GROSS** (price delta × size × contractSize), **not** net of fees or funding:
 
 $$
-\Pi_{\text{gross}} = (P_{i+1} - P_i) \cdot q \cdot \kappa
+\Pi_{\mathrm{gross}} = (P_{i+1} - P_{i}) \cdot q \cdot \kappa
 $$
 
 with \(q =\) `GRID_ORDER_SIZE` and \(\kappa =\) `contractSize`. The CLI `simulate` line prints this number.
@@ -155,7 +155,7 @@ with \(q =\) `GRID_ORDER_SIZE` and \(\kappa =\) `contractSize`. The CLI `simulat
 Public MEXC USDT-M: **0 bps maker / 2 bps taker**. This bot rests limits, so the venue print is maker-friendly. The desk still models a conservative blend (some residual take + slip):
 
 $$
-c = 2 \cdot \frac{f_{\text{bps}} + s_{\text{bps}}}{10{,}000}
+c = 2 \cdot \frac{f_{\mathrm{bps}} + s_{\mathrm{bps}}}{10{,}000}
 $$
 
 Shipped README model: \(f = 6\), \(s = 4\) → **\(c = 20\) bps**.
@@ -179,7 +179,7 @@ $$
 Net on a clean cycle:
 
 $$
-\Pi_{\text{net}} \approx N \cdot (\text{gross step} - c) - \text{funding drag}
+\Pi_{\mathrm{net}} \approx N \cdot (\text{gross step} - c) - \text{funding drag}
 $$
 
 **Constraint:** `gross_step` **must be several times** \((c + \text{typical funding drag})\). On the shipped geometric book, 2.76% / 0.20% ≈ **13.8×** before funding; after a quiet 0.5 bp funding print it is still ~**13×**. Pack `GRID_LEVELS` toward 20 on the same band and the step collapses toward ~1% — still above 20 bps on paper, but a modest trend now loads **many** rungs on one side while funding taxes the inventory. That is how “more levels” looks busy and still loses.
@@ -196,7 +196,7 @@ At 20 bps fee/slip plus a few bps of funding you need **> ~0.25%** just to break
 
 ### Margin walk vs `MAX_MARGIN_EXPOSURE`
 
-Open-side margin on deploy is \(\sum_i M_i\) over rungs with \(P_i < P_{\text{last}}\) (long). If last walks every open except the top, that sum is the **walk**. Shipped **100** contracts × 0.0001 × ~\$64.3k ≈ **\$643 notional / ~\$107 margin at 6x**. Four initial opens ≈ **\$406**. A seven-rung walk ≈ **\$742**. Cap **2000** covers that walk (and an AI 1.2× RSI size bump) without instantly blocking the ladder, and still leaves a starter-desk ceiling vs a \$10k book.
+Open-side margin on deploy is \(\sum_{i} M_{i}\) over rungs with \(P_{i} < P_{\mathrm{last}}\) (long). If last walks every open except the top, that sum is the **walk**. Shipped **100** contracts × 0.0001 × ~\$64.3k ≈ **\$643 notional / ~\$107 margin at 6x**. Four initial opens ≈ **\$406**. A seven-rung walk ≈ **\$742**. Cap **2000** covers that walk (and an AI 1.2× RSI size bump) without instantly blocking the ladder, and still leaves a starter-desk ceiling vs a \$10k book.
 
 Size, leverage, and `MAX_MARGIN_EXPOSURE` **must move together**: raise `GRID_ORDER_SIZE` or cut leverage without raising the cap and the risk manager blocks every open.
 
@@ -233,8 +233,8 @@ Results depend on settings, market regime, and how you tune. There is **no guara
 **Plain English:** a band that actually contains BTC, eight rungs, contracts large enough that 20 bps is not the whole story, 8x instead of 10x, and brakes that actually fire produces *cleaner* round-trips. That is the profile worth hunting. Your live numbers will move with MEXC volatility, whether fills stay maker, the funding print, and how hard you push `GRID_ORDER_SIZE` and `LEVERAGE`.
 
 ```text
-TUNED SCENARIO (illustrative)     $10k book · 86 fills
-Win rate  60.5%   Payoff  1.67   EV/trade  +$10.63
+TUNED SCENARIO (illustrative)     USD 10k book · 86 fills
+Win rate  60.5%   Payoff  1.67   EV/trade  +USD 10.63
 ROI       +9.1%   PF      2.56   Max DD     4.8%
 ```
 
@@ -279,21 +279,21 @@ Decision flow is GitHub Mermaid (green/red/slate for readability). Performance c
 ```mermaid
 %%{init: {"theme":"base","themeVariables":{"primaryColor":"#14532d","primaryTextColor":"#ecfdf5","primaryBorderColor":"#22c55e","lineColor":"#64748b","secondaryColor":"#7f1d1d","tertiaryColor":"#1e293b"}}}%%
 flowchart TD
-  A["MEXC last BTC_USDT perp"]:::go --> B{"STOP_LOSS or TAKE_PROFIT?"}:::mid
+  A["MEXC last BTC-USDT perp"]:::go --> B{"STOP-LOSS or TAKE-PROFIT?"}:::mid
   B -->|Yes| C["Cancel all + shutdown"]:::stop
-  B -->|No| D{"|funding| > MAX_FUNDING_RATE?"}:::mid
+  B -->|No| D{"abs funding above max funding rate?"}:::mid
   D -->|Yes at boot| E["Refuse to start"]:::stop
   D -->|Yes on poll| F["Log funding warning"]:::mid
   F --> G["Build geometric or arithmetic ladder"]:::go
   D -->|No| G
   G --> H["open below last / close above last (long)"]:::go
-  H --> I{"Open blocked by MAX_MARGIN_EXPOSURE or size?"}:::mid
+  H --> I{"Open blocked by margin cap or size?"}:::mid
   I -->|Yes| J["Skip that open"]:::stop
   I -->|No| K["Rest native LIMIT"]:::go
-  K --> L["Poll POLL_INTERVAL_MS"]:::mid
+  K --> L["Poll interval"]:::mid
   L --> B
-  K --> M["AI timer AI_REBALANCE_INTERVAL_MS"]:::mid
-  M --> N{"Regime suitableForGrid?"}:::mid
+  K --> M["AI timer"]:::mid
+  M --> N{"Regime suitable for grid?"}:::mid
   N -->|No| O["Stand down nudges"]:::stop
   N -->|Yes| P["Bounded range / lev / dir / size nudge"]:::go
   classDef go fill:#14532d,stroke:#22c55e,color:#ecfdf5
