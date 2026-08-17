@@ -57,8 +57,8 @@ export function normalizeSymbol(raw: string): string {
 }
 
 export function loadConfig(overrides?: Partial<{ dryRun: boolean }>): AppConfig {
-  const lowerPrice = Number(process.env.GRID_LOWER_PRICE);
-  const upperPrice = Number(process.env.GRID_UPPER_PRICE);
+  const lowerPrice = Number(process.env.GRID_LOWER_PRICE ?? 58500);
+  const upperPrice = Number(process.env.GRID_UPPER_PRICE ?? 70800);
 
   const raw = {
     mexc: {
@@ -68,29 +68,21 @@ export function loadConfig(overrides?: Partial<{ dryRun: boolean }>): AppConfig 
     },
     trading: {
       symbol: normalizeSymbol(process.env.MEXC_SYMBOL ?? "BTC_USDT"),
-      gridMode: (process.env.GRID_MODE ?? "arithmetic") as GridMode,
+      gridMode: (process.env.GRID_MODE ?? "geometric") as GridMode,
       lowerPrice,
       upperPrice,
-      levels: Number(process.env.GRID_LEVELS ?? 10),
-      orderSize: Number(process.env.GRID_ORDER_SIZE ?? 10),
-      leverage: Number(process.env.LEVERAGE ?? 10),
+      levels: Number(process.env.GRID_LEVELS ?? 8),
+      orderSize: Number(process.env.GRID_ORDER_SIZE ?? 100),
+      leverage: Number(process.env.LEVERAGE ?? 6),
       marginMode: (process.env.MARGIN_MODE ?? "isolated") as MarginMode,
       positionMode: (process.env.POSITION_MODE ?? "one-way") as
         | "one-way"
         | "dual",
       gridDirection: (process.env.GRID_DIRECTION ?? "long") as GridDirection,
-      maxMarginExposure: process.env.MAX_MARGIN_EXPOSURE
-        ? Number(process.env.MAX_MARGIN_EXPOSURE)
-        : undefined,
-      stopLossPrice: process.env.STOP_LOSS_PRICE
-        ? Number(process.env.STOP_LOSS_PRICE)
-        : undefined,
-      takeProfitPrice: process.env.TAKE_PROFIT_PRICE
-        ? Number(process.env.TAKE_PROFIT_PRICE)
-        : undefined,
-      maxFundingRate: process.env.MAX_FUNDING_RATE
-        ? Number(process.env.MAX_FUNDING_RATE)
-        : undefined,
+      maxMarginExposure: Number(process.env.MAX_MARGIN_EXPOSURE ?? 2000),
+      stopLossPrice: Number(process.env.STOP_LOSS_PRICE ?? 56800),
+      takeProfitPrice: Number(process.env.TAKE_PROFIT_PRICE ?? 72800),
+      maxFundingRate: Number(process.env.MAX_FUNDING_RATE ?? 0.0008),
       pollIntervalMs: Number(process.env.POLL_INTERVAL_MS ?? 5000),
       dryRun: overrides?.dryRun ?? process.env.DRY_RUN === "true",
     },

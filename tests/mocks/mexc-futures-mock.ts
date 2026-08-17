@@ -12,7 +12,7 @@ export function createMockFuturesClient(overrides?: {
   lastPrice?: number;
   minVol?: number;
 }): MexcFuturesClient {
-  const lastPrice = overrides?.lastPrice ?? 77_500;
+  const lastPrice = overrides?.lastPrice ?? 64_316;
   const orders: FuturesOrder[] = [];
 
   const contractDetail: ContractDetail = {
@@ -39,7 +39,7 @@ export function createMockFuturesClient(overrides?: {
       bid1: lastPrice,
       ask1: lastPrice + 0.1,
       volume24: 1_000_000,
-      amount24: 77_000_000_000,
+      amount24: 6_300_000_000,
       holdVol: 500_000,
       lower24Price: lastPrice * 0.98,
       high24Price: lastPrice * 1.02,
@@ -68,7 +68,7 @@ export function createMockFuturesClient(overrides?: {
         symbol: req.symbol,
         price: req.price,
         vol: req.vol,
-        leverage: req.leverage ?? 10,
+        leverage: req.leverage ?? 6,
         side: req.side,
         category: 1,
         orderType: 1,

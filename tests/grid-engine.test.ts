@@ -13,16 +13,19 @@ function buildTestConfig(dryRun = true): AppConfig {
     },
     trading: {
       symbol: "BTC_USDT",
-      gridMode: "arithmetic",
-      lowerPrice: 74_000,
-      upperPrice: 81_000,
+      gridMode: "geometric",
+      lowerPrice: 58_500,
+      upperPrice: 70_800,
       levels: 8,
-      orderSize: 10,
-      leverage: 10,
+      orderSize: 100,
+      leverage: 6,
       marginMode: "isolated",
       positionMode: "one-way",
       gridDirection: "long",
-      maxMarginExposure: 500,
+      maxMarginExposure: 2000,
+      stopLossPrice: 56_800,
+      takeProfitPrice: 72_800,
+      maxFundingRate: 0.0008,
       pollIntervalMs: 60_000,
       dryRun,
     },
@@ -46,7 +49,7 @@ describe("FuturesGridEngine", () => {
   });
 
   it("initializes and builds grid levels", async () => {
-    const client = createMockFuturesClient({ lastPrice: 77_500 });
+    const client = createMockFuturesClient({ lastPrice: 64_316 });
     const engine = new FuturesGridEngine(
       client,
       buildTestConfig(),
@@ -57,11 +60,13 @@ describe("FuturesGridEngine", () => {
     const levels = engine.getLevels();
 
     expect(levels.length).toBeGreaterThan(0);
-    expect(levels[0]!.price).toBeLessThan(77_500);
+    expect(levels[0]!.price).toBeLessThan(64_316);
+    expect(levels.some((l) => l.action === "open_long")).toBe(true);
+    expect(levels.some((l) => l.action === "close_long")).toBe(true);
   });
 
   it("deploys initial grid in dry run", async () => {
-    const client = createMockFuturesClient({ lastPrice: 77_500 });
+    const client = createMockFuturesClient({ lastPrice: 64_316 });
     const engine = new FuturesGridEngine(
       client,
       buildTestConfig(true),
@@ -77,7 +82,7 @@ describe("FuturesGridEngine", () => {
   });
 
   it("rebalances after simulated fill", async () => {
-    const client = createMockFuturesClient({ lastPrice: 77_500 });
+    const client = createMockFuturesClient({ lastPrice: 64_316 });
     const engine = new FuturesGridEngine(
       client,
       buildTestConfig(true),
@@ -99,7 +104,7 @@ describe("FuturesGridEngine", () => {
   });
 
   it("stops polling cleanly", async () => {
-    const client = createMockFuturesClient({ lastPrice: 77_500 });
+    const client = createMockFuturesClient({ lastPrice: 64_316 });
     const engine = new FuturesGridEngine(
       client,
       buildTestConfig(true),

@@ -8,7 +8,7 @@ describe("config", () => {
     expect(normalizeSymbol("BTCUSDT")).toBe("BTC_USDT");
   });
 
-  it("validates config schema", () => {
+  it("validates the shipped geometric desk", () => {
     const result = ConfigSchema.safeParse({
       mexc: {
         apiKey: "key",
@@ -17,15 +17,19 @@ describe("config", () => {
       },
       trading: {
         symbol: "BTC_USDT",
-        gridMode: "arithmetic",
-        lowerPrice: 74000,
-        upperPrice: 81000,
-        levels: 10,
-        orderSize: 10,
-        leverage: 10,
+        gridMode: "geometric",
+        lowerPrice: 58500,
+        upperPrice: 70800,
+        levels: 8,
+        orderSize: 100,
+        leverage: 6,
         marginMode: "isolated",
         positionMode: "one-way",
         gridDirection: "long",
+        maxMarginExposure: 2000,
+        stopLossPrice: 56800,
+        takeProfitPrice: 72800,
+        maxFundingRate: 0.0008,
         pollIntervalMs: 5000,
         dryRun: false,
       },
@@ -37,5 +41,12 @@ describe("config", () => {
     });
 
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.trading.gridMode).toBe("geometric");
+      expect(result.data.trading.levels).toBe(8);
+      expect(result.data.trading.leverage).toBe(6);
+      expect(result.data.trading.orderSize).toBe(100);
+      expect(result.data.trading.maxFundingRate).toBe(0.0008);
+    }
   });
 });
